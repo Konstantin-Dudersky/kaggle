@@ -8,6 +8,23 @@ import pandas as pd
 import numpy as np
 
 
+def pythonic_names(df: pd.DataFrame) -> pd.DataFrame:
+    res = {}
+    for col in df.columns:
+        s = ''
+        # Если в середине есть заглавная буква, добавляем знак подчеркивания
+        for i in range(len(col)):
+            if i > 0 and col[i].isupper() and col[i-1].islower():
+                s += '_' + col[i]
+            else:
+                s += col[i]
+
+        s = s.strip().lower().replace(' ', '_')
+        res[col] = s
+
+    return df.rename(columns=res)
+
+
 def regression_report(df, model_name, y_train, y_train_pred, y_test, y_test_pred, sort_by='R2'):
     _df = df.copy()
 
@@ -15,7 +32,7 @@ def regression_report(df, model_name, y_train, y_train_pred, y_test, y_test_pred
         tuples = [
             ('R2', 'train'), ('R2', 'test'),
             ('MAE', 'train'), ('MAE', 'test'),
-            ('MSE', 'train'), ('MSE', 'test'),
+            ('RMSE', 'train'), ('RMSE', 'test'),
             ('MAPE', 'train'), ('MAPE', 'test'),
         ]
         index = pd.MultiIndex.from_tuples(tuples)
@@ -26,8 +43,8 @@ def regression_report(df, model_name, y_train, y_train_pred, y_test, y_test_pred
         ('R2', 'test'): r2_score(y_test, y_test_pred),
         ('MAE', 'train'): mean_absolute_error(y_train, y_train_pred),
         ('MAE', 'test'): mean_absolute_error(y_test, y_test_pred),
-        ('MSE', 'train'): mean_squared_error(y_train, y_train_pred),
-        ('MSE', 'test'): mean_squared_error(y_test, y_test_pred),
+        ('RMSE', 'train'): mean_squared_error(y_train, y_train_pred, squared=False),
+        ('RMSE', 'test'): mean_squared_error(y_test, y_test_pred, squared=False),
         ('MAPE', 'train'): mean_absolute_percentage_error(y_train, y_train_pred),
         ('MAPE', 'test'): mean_absolute_percentage_error(y_test, y_test_pred),
     }
@@ -48,6 +65,19 @@ class DisplayDfInPipe(BaseEstimator, TransformerMixin):
 
     def transform(self, x: pd.DataFrame, y: pd.DataFrame = None) -> pd.DataFrame:
         display(x.head(self.n))
+
+        return x
+
+
+class PipeNumericFilter(BaseEstimator, TransformerMixin):
+    def fit(self, x: pd.DataFrame, y: pd.DataFrame = None) -> 'PipeNumericFilter':
+        print('transform, len(x):', len(x))
+        print('transform, len(y):', len(y))
+        return self
+
+    def transform(self, x: pd.DataFrame, y: pd.DataFrame = None) -> pd.DataFrame:
+        print('transform, len(x):', len(x))
+        print('transform, len(y):', len(y))
 
         return x
 
